@@ -42,13 +42,24 @@ vector<Path> tour;
 //Parameters
 int x_dim_max = 50;
 int y_dim_max = 50;
-int pop_size = 100;
-int num_cities = 5;
+int pop_size = 20;
+int num_cities = 100;
 int to_kill = pop_size/2;
 int kill;
-int max_gen = 100;
-int max_trial = 2;
+int max_gen = 200;
 
+
+//Statistics
+int num_trials = 30;
+vector<double> max_fitness;
+vector<double> ave_fitness;
+vector<double> min_fitness;
+double ave_max_fitness;
+double ave_ave_fitness;
+double ave_min_fitness;
+vector<double> ave_of_ave_max;
+vector<double> ave_of_ave_ave;
+vector<double> ave_of_ave_min;
 
 
 
@@ -219,6 +230,7 @@ void get_distances_to_cities()
         }
     }
     */
+    
 }
 
 
@@ -507,6 +519,38 @@ void re_initialize_pop()
         tour.at(pop).town.at(num_cities).x_location = 0;
         tour.at(pop).town.at(num_cities).y_location = 0;
     }
+
+    
+    for (int pop=0; pop<pop_size; pop++)
+    {
+        for (int c=0; c<num_cities+1; c++)
+        {
+            double dist = 0;
+            double x = 0;
+            double y = 0;
+            x = tour.at(pop).town.at(0).x_location - tour.at(pop).town.at(c).x_location;
+            y = tour.at(pop).town.at(0).y_location - tour.at(pop).town.at(c).y_location;
+            dist = sqrt((x*x)+(y*y));
+            tour.at(pop).town.at(0).distance_to_cities.push_back(dist);
+            tour.at(pop).town.at(num_cities).distance_to_cities.push_back(dist);
+        }
+    }
+    
+    /*
+    for (int pop=0; pop<pop_size; pop++)
+    {
+        cout << "Path" << "\t" << pop << endl;
+        for (int c=0; c<num_cities+1; c++)
+        {
+            cout << "stop" << "\t" << c << endl;
+            for (int cc=0; cc<num_cities+1; cc++)
+            {
+                cout << tour.at(pop).town.at(c).distance_to_cities.at(cc) << endl;
+            }
+            cout << endl;
+        }
+    }
+    */
     
     /*
     for (int pop=0; pop<pop_size; pop++)
@@ -524,38 +568,163 @@ void re_initialize_pop()
 }
 
 
+//-----------------------------------------------------------
+//sorts the population based on their fitness from highest to lowest
+struct less_than_par_fitness
+{
+    inline bool operator() (const Path& struct1, const Path& struct2)
+    {
+        return (struct1.fitness < struct2.fitness);
+    }
+};
 
 
+//-----------------------------------------------------------
+//copies the max, ave, and min fitness
+void run_scoreboard()
+{
+    max_fitness.push_back(tour.at(0).fitness);
+    double sum = 0;
+    for (int p=0; p<pop_size; p++)
+    {
+        sum += tour.at(p).fitness;
+    }
+    ave_fitness.push_back(sum/pop_size);
+    min_fitness.push_back(tour.at(pop_size-1).fitness);
+    
+}
 
+
+//-----------------------------------------------------------
+//gets the ave of the ave
+void get_ave()
+{
+    for (int gen=0; gen<max_gen; gen++)
+    {
+        double ave_max_sum = 0;
+        double ave_ave_sum = 0;
+        double ave_min_sum = 0;
+        for (int trial=0; trial<num_trials; trial++)
+        {
+            ave_max_sum += max_fitness.at(gen+trial*max_gen);
+        }
+        ave_max_fitness = ave_max_sum/num_trials;
+        ave_of_ave_max.push_back(ave_max_fitness);
+        for (int trial=0; trial<num_trials; trial++)
+        {
+            ave_ave_sum += ave_fitness.at(gen+trial*max_gen);
+        }
+        ave_ave_fitness = ave_ave_sum/num_trials;
+        ave_of_ave_ave.push_back(ave_ave_fitness);
+        for (int trial=0; trial<num_trials; trial++)
+        {
+            ave_min_sum += min_fitness.at(gen+trial*max_gen);
+        }
+        ave_min_fitness = ave_min_sum/num_trials;
+        ave_of_ave_min.push_back(ave_min_fitness);
+    }
+}
+
+
+//-----------------------------------------------------------
+//writes the max, ave, and min fitness for each generation to a txt file
+void write_pop_info_all_gens_to_text()
+{
+    ofstream File1;
+    File1.open("Max Fitness For All Gens.txt");
+    ofstream File2;
+    File2.open("Ave Fitness For All Gens.txt");
+    ofstream File3;
+    File3.open("Min Fitness For All Gens.txt");
+    ofstream File4;
+    File4.open("Ave Max Fitness For All Trails");
+    ofstream File5;
+    File5.open("Ave Ave Fitness For All Trails");
+    ofstream File6;
+    File6.open("Ave Min Fitness For All Trails");
+    //cout << "fitness across generations" << endl;
+    //cout << "max fitness" << endl;
+    for (int i=0; i<max_gen*num_trials; i++)
+    {
+        File1 << max_fitness.at(i) << endl;
+    }
+    //cout << endl;
+    //cout << "ave fitness" << endl;
+    for (int i=0; i<max_gen*num_trials; i++)
+    {
+        File2 << ave_fitness.at(i) << endl;
+    }
+    //cout << endl;
+    //cout << "min fitness" << endl;
+    for (int i=0; i<max_gen*num_trials; i++)
+    {
+        File3 << min_fitness.at(i) << endl;
+    }
+    for (int i=0; i<max_gen; i++)
+    {
+        File4 << ave_of_ave_max.at(i) << endl;
+    }
+    for (int i=0; i<max_gen; i++)
+    {
+        File5 << ave_of_ave_ave.at(i) << endl;
+    }
+    for (int i=0; i<max_gen; i++)
+    {
+        File6 << ave_of_ave_min.at(i) << endl;
+    }
+    //cout << endl;
+    //cout << endl;
+    File1.close();
+    File2.close();
+    File3.close();
+    File4.close();
+    File5.close();
+    File6.close();
+}
+
+
+//-----------------------------------------------------------
+//Runs the entire TSP program
 void run_TSP()
 {
     build_pop();
     get_distances_to_cities();
-    for (int trial=0; trial<max_trial; trial++)
+    for (int trial=0; trial<num_trials; trial++)
     {
         cout << "------------------------------------" << endl;
         cout << "trial" << "\t" << trial << endl;
+        cout << endl;
         if (trial>0)
         {
             re_initialize_pop();
-            get_distances_to_cities();
+            //get_distances_to_cities();
         }
         for (int gen=0; gen<max_gen; gen++)
         {
             if (gen % 10 == 0)
             {
-             cout << "generation" << "\t" << gen << endl;
+                cout << "generation" << "\t" << gen << endl;
+                cout << endl;
             }
-            if (gen = max_gen-1)
+            
+            get_total_dist_traveled();
+            get_fitness();
+            sort(tour.begin(), tour.end(), less_than_par_fitness());
+            natural_selection();
+            get_total_dist_traveled();
+            get_fitness();
+            
+            sort(tour.begin(), tour.end(), less_than_par_fitness());
+            run_scoreboard();
+            
+            /*
+            if (gen == max_gen-1)
             {
                 cout << "generation" << "\t" << gen << endl;
             }
-            get_total_dist_traveled();
-            get_fitness();
-            natural_selection();
-            //cout << "new population" << endl;
             if (gen == max_gen-1)
             {
+                cout << "Final Population" << endl;
                 for (int pop=0; pop<pop_size; pop++)
                 {
                     cout << "Path" << "\t" << pop << endl;
@@ -568,8 +737,7 @@ void run_TSP()
                     cout << endl;
                 }
             }
-            get_total_dist_traveled();
-            get_fitness();
+            */
             
             /*
              for (int pop=0; pop<pop_size; pop++)
@@ -586,6 +754,8 @@ void run_TSP()
              */
         }
     }
+    get_ave();
+    write_pop_info_all_gens_to_text();
 }
 
 
