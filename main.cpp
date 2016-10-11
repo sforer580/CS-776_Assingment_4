@@ -42,11 +42,11 @@ vector<Path> tour;
 //Parameters
 int x_dim_max = 50;
 int y_dim_max = 50;
-int pop_size = 20;
+int pop_size = 50;
 int num_cities = 100;
 int to_kill = pop_size/2;
 int kill;
-int max_gen = 200;
+int max_gen = 5000;
 
 
 //Statistics
@@ -583,14 +583,14 @@ struct less_than_par_fitness
 //copies the max, ave, and min fitness
 void run_scoreboard()
 {
-    max_fitness.push_back(tour.at(0).fitness);
+    min_fitness.push_back(tour.at(0).fitness);
     double sum = 0;
     for (int p=0; p<pop_size; p++)
     {
         sum += tour.at(p).fitness;
     }
     ave_fitness.push_back(sum/pop_size);
-    min_fitness.push_back(tour.at(pop_size-1).fitness);
+    max_fitness.push_back(tour.at(pop_size-1).fitness);
     
 }
 
@@ -606,10 +606,10 @@ void get_ave()
         double ave_min_sum = 0;
         for (int trial=0; trial<num_trials; trial++)
         {
-            ave_max_sum += max_fitness.at(gen+trial*max_gen);
+            ave_min_sum += max_fitness.at(gen+trial*max_gen);
         }
-        ave_max_fitness = ave_max_sum/num_trials;
-        ave_of_ave_max.push_back(ave_max_fitness);
+        ave_min_fitness = ave_min_sum/num_trials;
+        ave_of_ave_min.push_back(ave_min_fitness);
         for (int trial=0; trial<num_trials; trial++)
         {
             ave_ave_sum += ave_fitness.at(gen+trial*max_gen);
@@ -618,10 +618,10 @@ void get_ave()
         ave_of_ave_ave.push_back(ave_ave_fitness);
         for (int trial=0; trial<num_trials; trial++)
         {
-            ave_min_sum += min_fitness.at(gen+trial*max_gen);
+            ave_max_sum += max_fitness.at(gen+trial*max_gen);
         }
-        ave_min_fitness = ave_min_sum/num_trials;
-        ave_of_ave_min.push_back(ave_min_fitness);
+        ave_max_fitness = ave_max_sum/num_trials;
+        ave_of_ave_max.push_back(ave_max_fitness);
     }
 }
 
@@ -631,22 +631,22 @@ void get_ave()
 void write_pop_info_all_gens_to_text()
 {
     ofstream File1;
-    File1.open("Max Fitness For All Gens.txt");
+    File1.open("Min Fitness For All Gens.txt");
     ofstream File2;
     File2.open("Ave Fitness For All Gens.txt");
     ofstream File3;
-    File3.open("Min Fitness For All Gens.txt");
+    File3.open("Max Fitness For All Gens.txt");
     ofstream File4;
-    File4.open("Ave Max Fitness For All Trails");
+    File4.open("Ave Min Fitness For All Trails");
     ofstream File5;
     File5.open("Ave Ave Fitness For All Trails");
     ofstream File6;
-    File6.open("Ave Min Fitness For All Trails");
+    File6.open("Ave Max Fitness For All Trails");
     //cout << "fitness across generations" << endl;
     //cout << "max fitness" << endl;
     for (int i=0; i<max_gen*num_trials; i++)
     {
-        File1 << max_fitness.at(i) << endl;
+        File1 << min_fitness.at(i) << endl;
     }
     //cout << endl;
     //cout << "ave fitness" << endl;
@@ -658,11 +658,11 @@ void write_pop_info_all_gens_to_text()
     //cout << "min fitness" << endl;
     for (int i=0; i<max_gen*num_trials; i++)
     {
-        File3 << min_fitness.at(i) << endl;
+        File3 << max_fitness.at(i) << endl;
     }
     for (int i=0; i<max_gen; i++)
     {
-        File4 << ave_of_ave_max.at(i) << endl;
+        File4 << ave_of_ave_min.at(i) << endl;
     }
     for (int i=0; i<max_gen; i++)
     {
@@ -670,7 +670,7 @@ void write_pop_info_all_gens_to_text()
     }
     for (int i=0; i<max_gen; i++)
     {
-        File6 << ave_of_ave_min.at(i) << endl;
+        File6 << ave_of_ave_max.at(i) << endl;
     }
     //cout << endl;
     //cout << endl;
@@ -701,7 +701,7 @@ void run_TSP()
         }
         for (int gen=0; gen<max_gen; gen++)
         {
-            if (gen % 10 == 0)
+            if (gen % 100 == 0)
             {
                 cout << "generation" << "\t" << gen << endl;
                 cout << endl;
